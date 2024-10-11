@@ -17,7 +17,7 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use('./api/vi/reservation',reservationRouter)
+app.use('/api/v1/reservation', reservationRouter); // Corrected path
 
 dbConnection();
 export default app;
