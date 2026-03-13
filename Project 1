@@ -1,0 +1,655 @@
+# Complete Project Explanation — Easy Language
+
+Let me explain everything from scratch, like you've never seen this before.
+
+---
+
+## Part 1 — What Are We Building?
+
+Imagine you work for an **online shopping company** like Amazon or Flipkart. The company needs software to manage their products. Specifically they need to:
+
+- **Track items** (what products do we sell?)
+- **Track inventory** (how many units do we have in the warehouse?)
+- **Send notifications** (alert someone when stock is low)
+- **Keep audit logs** (record who did what and when)
+
+We are building the **backend software** that handles all of this. No website, no mobile app — just the **engine behind the scenes** that stores data and responds to requests.
+
+---
+
+## Part 2 — What is a Microservice?
+
+### The Old Way — One Big Application (Monolith)
+
+Imagine one giant building where the kitchen, laundry, gym, and office are all in the same room. If the kitchen catches fire, **everything** burns down.
+
+```
+ONE BIG APP
+┌─────────────────────────────────┐
+│  Items + Inventory +            │
+│  Notifications + Audit Logs     │
+│  ALL IN ONE PLACE               │
+└─────────────────────────────────┘
+Problem: If one part breaks, everything breaks
+```
+
+### The New Way — Microservices
+
+Now imagine **4 separate buildings**, each doing one job. If one building has a problem, the other 3 keep working fine.
+
+```
+4 SEPARATE SMALL APPS
+┌──────────┐  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐
+│  Item    │  │  Inventory  │  │ Notification │  │    Audit     │
+│ Service  │  │   Service   │  │   Service    │  │   Service    │
+│ Port8081 │  │  Port 8082  │  │  Port 8083   │  │  Port 8084   │
+└──────────┘  └─────────────┘  └──────────────┘  └──────────────┘
+Each service has its own database, its own code, runs independently
+```
+
+This is exactly what we built — **4 independent Spring Boot applications**.
+
+---
+
+## Part 3 — What is Spring Boot?
+
+Spring Boot is a **Java framework** — think of it as a ready-made toolkit. Instead of building everything from scratch (like setting up a web server, database connection, etc.), Spring Boot gives you all of that pre-built. You just write your business logic.
+
+It's like building a house. Without Spring Boot you'd make your own bricks, your own cement, your own tools. With Spring Boot, those are already provided — you just assemble the house.
+
+---
+
+## Part 4 — What is REST API?
+
+### Real World Analogy
+
+Think of a **restaurant**:
+- You (the customer) are the **client**
+- The kitchen is the **server/database**
+- The waiter is the **API**
+- The menu is the **list of available requests**
+
+You don't go into the kitchen yourself. You tell the waiter what you want, the waiter goes to the kitchen, brings back the food. The API works exactly the same way.
+
+### HTTP Methods — The 4 Actions
+
+Every request uses one of these 4 actions:
+
+```
+POST   → Create something new    (like placing a new order)
+GET    → Read / fetch data        (like asking "what's on the menu?")
+PUT    → Update existing data     (like saying "change my order")
+DELETE → Remove data              (like cancelling your order)
+```
+
+### What is JSON?
+
+JSON is the **language** that APIs use to send and receive data. It looks like this:
+
+```json
+{
+  "name": "Wireless Mouse",
+  "category": "Electronics",
+  "description": "Ergonomic mouse"
+}
+```
+
+It's just key-value pairs, like a form you fill out. Our APIs receive JSON as input and send JSON as output.
+
+---
+
+## Part 5 — Project Structure Explained
+
+Every service follows the same structure. Let's use Item Service as the example and explain every folder and file.
+
+```
+item-service/
+├── pom.xml                          ← Shopping list of dependencies
+└── src/
+    └── main/
+        ├── resources/
+        │   └── application.properties  ← Settings file
+        └── java/com/ecommerce/itemservice/
+            ├── ItemServiceApplication.java  ← Main entry point
+            ├── model/
+            │   └── Item.java              ← Database table blueprint
+            ├── dto/
+            │   └── ItemDTO.java           ← Data transfer object
+            ├── repository/
+            │   └── ItemRepository.java    ← Database operations
+            ├── service/
+            │   ├── ItemService.java       ← What operations exist
+            │   └── ItemServiceImpl.java   ← How operations work
+            ├── controller/
+            │   └── ItemController.java    ← API endpoints
+            ├── exception/
+            │   ├── ItemNotFoundException.java     ← Custom error
+            │   └── GlobalExceptionHandler.java    ← Error handler
+            └── config/
+                ├── JwtUtil.java           ← JWT helper
+                ├── JwtAuthFilter.java     ← Security filter
+                ├── SecurityConfig.java    ← Security rules
+                └── OpenApiConfig.java     ← Swagger setup
+```
+
+Now let's understand each piece.
+
+---
+
+## Part 6 — Each File Explained
+
+### 📄 pom.xml — The Shopping List
+
+Before you cook a meal, you need ingredients. Before your app runs, it needs libraries. `pom.xml` is that list.
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+This is like saying "I need the web server ingredient." Maven (the build tool) reads this file and automatically downloads everything from the internet the first time you run the project.
+
+Key dependencies we use:
+
+```
+spring-boot-starter-web        → Makes it a web application (handles HTTP requests)
+spring-boot-starter-data-jpa   → Talks to the database
+spring-boot-starter-security   → Handles authentication/JWT
+spring-boot-starter-validation → Validates input data
+mysql-connector-j              → MySQL database driver
+springdoc-openapi              → Generates Swagger UI
+lombok                         → Reduces repetitive code
+jjwt                           → JWT token library
+```
+
+---
+
+### 📄 application.properties — The Settings File
+
+This is the **configuration file**. It tells your app how to behave.
+
+```properties
+server.port=8081
+```
+This service runs on port 8081. Like an apartment number — other services live on 8082, 8083, 8084.
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/item_db
+spring.datasource.username=root
+spring.datasource.password=root
+```
+This is the **address and login** for your MySQL database. Like a home address + key to get in.
+
+```properties
+spring.jpa.hibernate.ddl-auto=update
+```
+This tells Hibernate (the database tool): "Look at my Java classes and automatically create/update the database tables." You don't have to write `CREATE TABLE` SQL yourself.
+
+```properties
+jwt.secret=ecommerce-item-service-secret-key-for-jwt-auth-2025
+jwt.expiration=86400000
+```
+The secret key used to sign JWT tokens, and expiration time (86400000 milliseconds = 24 hours).
+
+---
+
+### 📄 Model — Item.java — The Database Blueprint
+
+The model class represents a **database table**. Every field in the class becomes a column in the table.
+
+```java
+@Entity           ← "This class = a database table"
+@Table(name = "items")   ← "The table is named 'items'"
+public class Item {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;          ← Auto-generated ID (1, 2, 3...)
+
+    @Column(nullable = false)
+    private String name;      ← Item name, cannot be empty
+
+    private String description;   ← Optional description
+
+    @Column(nullable = false)
+    private String category;  ← Category, cannot be empty
+
+    private LocalDateTime createdAt;  ← When it was created
+}
+```
+
+When your app starts, Hibernate reads this class and creates this table in MySQL:
+
+```
+items table in MySQL:
+┌────┬──────────────────┬─────────────────┬─────────────┬─────────────────────┐
+│ id │ name             │ description     │ category    │ created_at          │
+├────┼──────────────────┼─────────────────┼─────────────┼─────────────────────┤
+│  1 │ Wireless Mouse   │ Ergonomic mouse │ Electronics │ 2025-07-28 09:00:00 │
+│  2 │ USB Keyboard     │ Mechanical KB   │ Electronics │ 2025-07-28 10:00:00 │
+└────┴──────────────────┴─────────────────┴─────────────┴─────────────────────┘
+```
+
+---
+
+### 📄 DTO — ItemDTO.java — The Data Transfer Object
+
+**Why do we need DTO when we already have the Model?**
+
+Think of it this way. The **Model** is your internal database record — it might have sensitive fields or fields you don't want to expose. The **DTO** is what you show to the outside world.
+
+Real example: Your `User` model might have a `password` field. You never want to send the password in an API response. So your `UserDTO` has everything except the password.
+
+In our case, `ItemDTO` also contains **validation rules**:
+
+```java
+public class ItemDTO {
+
+    private Long id;
+
+    @NotBlank(message = "Name is required")
+    @Size(max = 150, message = "Name must not exceed 150 characters")
+    private String name;       ← Must not be blank, max 150 chars
+
+    private String description;   ← Optional
+
+    @NotBlank(message = "Category is required")
+    private String category;  ← Must not be blank
+
+    private LocalDateTime createdAt;
+}
+```
+
+So when someone sends a POST request to create an item, if they forget to include the `name`, Spring automatically returns an error: `"Name is required"`. You don't have to write that check manually.
+
+---
+
+### 📄 Repository — ItemRepository.java — Database Operations
+
+The repository is your **direct line to the database**. You define what queries you need, and Spring automatically implements them for you.
+
+```java
+@Repository
+public interface ItemRepository extends JpaRepository<Item, Long> {
+
+    List<Item> findByCategory(String category);
+    // Spring reads this method name and generates:
+    // SELECT * FROM items WHERE category = ?
+
+    List<Item> findByNameContainingIgnoreCase(String name);
+    // SELECT * FROM items WHERE LOWER(name) LIKE LOWER('%name%')
+
+    boolean existsByNameAndCategory(String name, String category);
+    // SELECT COUNT(*) > 0 FROM items WHERE name=? AND category=?
+}
+```
+
+By extending `JpaRepository`, you automatically get these methods **for free** without writing any code:
+
+```
+save(item)         → INSERT or UPDATE
+findById(id)       → SELECT WHERE id = ?
+findAll()          → SELECT * FROM items
+deleteById(id)     → DELETE WHERE id = ?
+existsById(id)     → SELECT COUNT(*) WHERE id = ?
+count()            → SELECT COUNT(*) FROM items
+```
+
+---
+
+### 📄 Service — The Business Logic Brain
+
+The service layer is where the **actual work happens**. The controller receives the request, the repository talks to the database — but the service **decides what to do**.
+
+**ItemService.java** — just defines what operations exist (interface):
+```java
+public interface ItemService {
+    ItemDTO createItem(ItemDTO itemDTO);
+    ItemDTO getItemById(Long id);
+    List<ItemDTO> getAllItems();
+    ItemDTO updateItem(Long id, ItemDTO itemDTO);
+    void deleteItem(Long id);
+}
+```
+
+**ItemServiceImpl.java** — actually implements those operations:
+
+```java
+public ItemDTO createItem(ItemDTO itemDTO) {
+
+    // Step 1: Convert DTO to Model (Entity)
+    Item item = Item.builder()
+            .name(itemDTO.getName())
+            .description(itemDTO.getDescription())
+            .category(itemDTO.getCategory())
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    // Step 2: Save to database
+    Item saved = itemRepository.save(item);
+
+    // Step 3: Convert saved Model back to DTO and return
+    return toDTO(saved);
+}
+```
+
+And for fetching:
+```java
+public ItemDTO getItemById(Long id) {
+
+    // Try to find in database
+    Item item = itemRepository.findById(id)
+            .orElseThrow(() -> new ItemNotFoundException(id));
+    // If not found → throw error "Item not found with id: X"
+    // If found → convert to DTO and return
+
+    return toDTO(item);
+}
+```
+
+---
+
+### 📄 Controller — ItemController.java — The API Doorway
+
+The controller is the **front door** of your service. Every URL endpoint lives here. When someone makes an HTTP request, it lands in this class first.
+
+```java
+@RestController           ← "This class handles HTTP requests"
+@RequestMapping("/api/items")  ← All URLs start with /api/items
+public class ItemController {
+
+    @PostMapping          ← Handles POST /api/items
+    public ResponseEntity<ApiResponse<ItemDTO>> createItem(
+            @RequestBody ItemDTO itemDTO) {   ← Read JSON from request body
+        ItemDTO created = itemService.createItem(itemDTO);
+        return ResponseEntity.status(201).body(...);  ← Return 201 Created
+    }
+
+    @GetMapping("/{id}")  ← Handles GET /api/items/5
+    public ResponseEntity<ApiResponse<ItemDTO>> getItemById(
+            @PathVariable Long id) {   ← 5 becomes the 'id' variable
+        ItemDTO item = itemService.getItemById(id);
+        return ResponseEntity.ok(...);  ← Return 200 OK
+    }
+
+    @DeleteMapping("/{id}")  ← Handles DELETE /api/items/5
+    public ResponseEntity<ApiResponse<Void>> deleteItem(
+            @PathVariable Long id) {
+        itemService.deleteItem(id);
+        return ResponseEntity.ok(...);
+    }
+}
+```
+
+The **flow of every request** is:
+
+```
+Postman/Swagger → Controller → Service → Repository → MySQL Database
+                                                              ↓
+Postman/Swagger ← Controller ← Service ← Repository ← MySQL Database
+```
+
+---
+
+### 📄 Exception Handling — Clean Error Responses
+
+Without exception handling, if something goes wrong, Java would return a massive ugly error with 50 lines of stack trace. We don't want that.
+
+**ItemNotFoundException.java:**
+```java
+public class ItemNotFoundException extends RuntimeException {
+    public ItemNotFoundException(Long id) {
+        super("Item not found with id: " + id);
+    }
+}
+```
+
+**GlobalExceptionHandler.java** catches all errors and returns clean JSON:
+
+```java
+@ExceptionHandler(ItemNotFoundException.class)
+public ResponseEntity<ApiResponse<Void>> handleItemNotFound(ItemNotFoundException ex) {
+    return ResponseEntity.status(404).body(ApiResponse.error(ex.getMessage()));
+}
+```
+
+So instead of a scary Java error, the client gets this clean response:
+```json
+{
+  "success": false,
+  "message": "Item not found with id: 99",
+  "data": null
+}
+```
+
+---
+
+### 📄 ApiResponse.java — Consistent Response Wrapper
+
+Every API response looks the same — success or failure:
+
+```java
+// Success response looks like:
+{
+  "success": true,
+  "message": "Item created successfully",
+  "data": {
+    "id": 1,
+    "name": "Wireless Mouse",
+    "category": "Electronics"
+  }
+}
+
+// Error response looks like:
+{
+  "success": false,
+  "message": "Item not found with id: 99",
+  "data": null
+}
+```
+
+This consistency makes it easy for any frontend app to always know what to expect.
+
+---
+
+## Part 7 — Security (JWT) — Explained Simply
+
+### Why Security?
+
+Without security, **anyone** can call your APIs. Someone could delete all your items, or steal all your data. We use JWT to make sure only authorized users can use the APIs.
+
+### What is JWT?
+
+JWT = **JSON Web Token**. It's like a **visitor pass** at a company.
+
+```
+You arrive at office building
+        ↓
+Security desk checks your ID
+        ↓
+They give you a visitor pass (JWT token)
+        ↓
+Now you can enter any room that accepts that pass
+        ↓
+Pass expires after 24 hours → get a new one
+```
+
+### What Does a JWT Token Look Like?
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiJ9.XXXXX
+```
+
+It has 3 parts separated by dots:
+```
+HEADER.PAYLOAD.SIGNATURE
+
+Header  = algorithm used (HS256)
+Payload = data inside (username: admin)
+Signature = proof it hasn't been tampered with
+```
+
+### How JWT Works in Our Project
+
+```
+Step 1: You go to jwt.io and generate a token using our secret key
+
+Step 2: You send a request to our API with that token in the header:
+        Authorization: Bearer eyJhbGciOiJI...
+
+Step 3: JwtAuthFilter.java intercepts EVERY request before it reaches the controller
+
+Step 4: It reads the token from the Authorization header
+
+Step 5: JwtUtil.java verifies the token using the secret key
+
+Step 6: If valid → allow the request to proceed to the controller
+        If invalid → return 401 Unauthorized immediately
+```
+
+### The Security Files
+
+**JwtUtil.java** — The token toolbox:
+```java
+generateToken("admin")  → Creates a new JWT token
+validateToken(token)    → Checks if token is valid and not expired
+extractUsername(token)  → Reads who the token belongs to
+```
+
+**JwtAuthFilter.java** — The security guard at the door:
+```java
+// Runs before EVERY request
+// Reads Authorization header
+// Validates the token
+// If valid, lets the request through
+// If invalid, blocks it
+```
+
+**SecurityConfig.java** — The rules:
+```java
+// Swagger URLs → allowed without token (so you can see the docs)
+// Everything else → requires a valid JWT token
+```
+
+---
+
+## Part 8 — Swagger UI — Your Testing Dashboard
+
+Swagger automatically reads your controller code and builds a **visual testing interface** in the browser. You don't need Postman or any other tool.
+
+When you open `http://localhost:8081/swagger-ui.html`, you see:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Item Service API                    🔓 Authorize│
+├─────────────────────────────────────────────────┤
+│  POST   /api/items        Create item            │
+│  GET    /api/items        Get all items          │
+│  GET    /api/items/{id}   Get item by ID         │
+│  PUT    /api/items/{id}   Update item            │
+│  DELETE /api/items/{id}   Delete item            │
+└─────────────────────────────────────────────────┘
+```
+
+Click any endpoint → Click "Try it out" → Fill in data → Click "Execute" → See the response.
+
+---
+
+## Part 9 — The 4 Databases
+
+Each service has its **own completely separate database**. They don't share data.
+
+```
+item_db
+└── items table
+    (id, name, description, category, created_at)
+
+inventory_db
+└── inventory table
+    (id, item_id, quantity, warehouse_location, last_updated)
+
+notification_db
+└── notifications table
+    (id, event_type, recipient, message, sent_at)
+
+audit_db
+└── audit_logs table
+    (id, service_name, operation, record_id, timestamp, details)
+```
+
+Notice that `inventory` has an `item_id` column — this is a **logical reference** to an item. In a real production system, services would call each other's APIs to get related data.
+
+---
+
+## Part 10 — Full Request Flow Example
+
+Let's trace exactly what happens when you create a new item:
+
+```
+YOU (Swagger/Postman)
+Send: POST http://localhost:8081/api/items
+Body: { "name": "Wireless Mouse", "category": "Electronics" }
+Header: Authorization: Bearer eyJhbGc...
+           │
+           ▼
+JwtAuthFilter.java
+  → Reads the Bearer token
+  → Validates it using secret key
+  → Valid! Proceed.
+           │
+           ▼
+ItemController.java → createItem() method
+  → Receives the JSON
+  → Spring validates: name not blank? ✓  category not blank? ✓
+  → Calls itemService.createItem(itemDTO)
+           │
+           ▼
+ItemServiceImpl.java → createItem() method
+  → Converts DTO to Item model
+  → Sets createdAt = now
+  → Calls itemRepository.save(item)
+           │
+           ▼
+ItemRepository.java
+  → Runs: INSERT INTO items (name, description, category, created_at)
+          VALUES ('Wireless Mouse', null, 'Electronics', now())
+           │
+           ▼
+MySQL Database
+  → Saves the row
+  → Returns the saved row with auto-generated id=1
+           │
+           ▼ (response travels back up)
+ItemServiceImpl → converts Item back to ItemDTO
+           │
+           ▼
+ItemController → wraps in ApiResponse
+           │
+           ▼
+YOU receive:
+{
+  "success": true,
+  "message": "Item created successfully",
+  "data": {
+    "id": 1,
+    "name": "Wireless Mouse",
+    "category": "Electronics",
+    "createdAt": "2025-07-28T09:00:00"
+  }
+}
+HTTP Status: 201 Created
+```
+
+---
+
+## Part 11 — Tests Explained
+
+Each service has unit tests. These test the **service layer** without a real database (uses Mockito to fake the database).
+
+```java
+@Test
+void createItem_ShouldReturnCreatedItem() {
+
+   
