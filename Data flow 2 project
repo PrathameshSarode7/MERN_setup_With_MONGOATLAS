@@ -1,0 +1,590 @@
+# Data Flow — Complete Visual Guide
+
+## The Simple Version First
+
+Think of it like ordering food at a restaurant:
+
+```
+YOU order food → Waiter takes order → Kitchen cooks → Waiter brings food → YOU eat
+```
+
+In our project:
+```
+YOU send request → Controller receives → Service processes → Repository saves → Database stores
+                                                                    ↓
+YOU get response ← Controller returns ← Service returns ← Repository fetches ← Database
+```
+
+---
+
+## Part 1 — The 5 Layers and Their Jobs
+
+Before understanding flow, understand who does what:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   LAYER 1 → Security Filter    "Is this person allowed in?"    │
+│                ↓                                                │
+│   LAYER 2 → Controller         "What do you want?"             │
+│                ↓                                                │
+│   LAYER 3 → Service            "Let me process that"           │
+│                ↓                                                │
+│   LAYER 4 → Repository         "Let me talk to the database"   │
+│                ↓                                                │
+│   LAYER 5 → Database           "I will store/retrieve data"    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Real world comparison:
+
+```
+Security Filter  =  Security guard at office entrance
+Controller       =  Receptionist who receives your request
+Service          =  Manager who decides what to do
+Repository       =  Filing clerk who goes to the cabinet
+Database         =  The actual filing cabinet with all records
+```
+
+---
+
+## Part 2 — CREATE Flow (POST Request)
+
+### Scenario: You want to add a new item "Wireless Mouse"
+
+```
+STEP 1 — You send this from Swagger/Postman:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST http://localhost:8081/api/items
+
+Headers:
+  Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx
+
+Body (JSON):
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic mouse",
+  "category": "Electronics"
+}
+```
+
+```
+STEP 2 — JwtAuthFilter.java runs FIRST (before anything else)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Reads header: "Authorization: Bearer eyJhbGc..."
+        ↓
+  Extracts the token: "eyJhbGc..."
+        ↓
+  Calls jwtUtil.validateToken(token)
+        ↓
+  ┌─────────────────────────────────────────┐
+  │ Valid token? → YES → continue request   │
+  │ Valid token? → NO  → return 401 error   │
+  │              STOP, nothing else runs    │
+  └─────────────────────────────────────────┘
+        ↓ (token was valid, so continue)
+```
+
+```
+STEP 3 — ItemController.java receives the request
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  @PostMapping → createItem() method is called
+        ↓
+  Spring reads the JSON body and converts it to ItemDTO object:
+
+  ItemDTO {
+    id          = null  (not provided yet)
+    name        = "Wireless Mouse"
+    description = "Ergonomic mouse"
+    category    = "Electronics"
+    createdAt   = null  (not provided yet)
+  }
+        ↓
+  @Valid annotation triggers validation:
+  ┌────────────────────────────────────────────────────────┐
+  │ name blank?     NO → ✓ pass                            │
+  │ name > 150?     NO → ✓ pass                            │
+  │ category blank? NO → ✓ pass                            │
+  │ All passed → continue to service                       │
+  │ Any failed → return 400 Bad Request immediately        │
+  └────────────────────────────────────────────────────────┘
+        ↓ (all validation passed)
+  Calls: itemService.createItem(itemDTO)
+```
+
+```
+STEP 4 — ItemServiceImpl.java processes the request
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Receives: ItemDTO object
+
+  Converts DTO → Model (Entity):
+
+  ItemDTO (what came in)    →    Item (database object)
+  ┌──────────────────┐           ┌──────────────────────┐
+  │ name: W. Mouse   │    →      │ name: W. Mouse        │
+  │ desc: Ergo mouse │    →      │ description: Ergo..   │
+  │ category: Electr │    →      │ category: Electronics │
+  │ createdAt: null  │    →      │ createdAt: 2025-07-28 │ ← set NOW
+  └──────────────────┘           └──────────────────────┘
+
+  Why convert? DTO is for outside world, Model is for database.
+        ↓
+  Calls: itemRepository.save(item)
+```
+
+```
+STEP 5 — ItemRepository.java talks to MySQL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Receives: Item object
+
+  Hibernate (JPA) automatically generates SQL:
+
+  INSERT INTO items (name, description, category, created_at)
+  VALUES ('Wireless Mouse', 'Ergonomic mouse', 'Electronics', '2025-07-28 09:00:00')
+
+  Sends this SQL to MySQL database
+        ↓
+```
+
+```
+STEP 6 — MySQL Database saves the data
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  items table BEFORE:
+  ┌────┬──────┬─────────┬──────────┬────────────┐
+  │ id │ name │  desc   │ category │ created_at │
+  ├────┼──────┼─────────┼──────────┼────────────┤
+  │    │      │  EMPTY  │          │            │
+  └────┴──────┴─────────┴──────────┴────────────┘
+
+  items table AFTER:
+  ┌────┬──────────────┬──────────────┬─────────────┬─────────────────────┐
+  │ id │ name         │ description  │ category    │ created_at          │
+  ├────┼──────────────┼──────────────┼─────────────┼─────────────────────┤
+  │  1 │ Wireless     │ Ergonomic    │ Electronics │ 2025-07-28 09:00:00 │
+  │    │ Mouse        │ mouse        │             │                     │
+  └────┴──────────────┴──────────────┴─────────────┴─────────────────────┘
+
+  MySQL returns the saved row WITH the auto-generated id=1
+        ↓
+```
+
+```
+STEP 7 — Response travels back UP through the layers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Repository returns: Item object (with id=1 now set)
+        ↓
+  Service converts Item → ItemDTO:
+
+  Item (from database)        →    ItemDTO (to send back)
+  ┌───────────────────┐            ┌───────────────────┐
+  │ id: 1             │     →      │ id: 1             │
+  │ name: W. Mouse    │     →      │ name: W. Mouse    │
+  │ category: Electr  │     →      │ category: Electr  │
+  │ createdAt: ...    │     →      │ createdAt: ...    │
+  └───────────────────┘            └───────────────────┘
+        ↓
+  Controller wraps it in ApiResponse:
+  {
+    "success": true,
+    "message": "Item created successfully",
+    "data": {
+      "id": 1,
+      "name": "Wireless Mouse",
+      "description": "Ergonomic mouse",
+      "category": "Electronics",
+      "createdAt": "2025-07-28T09:00:00"
+    }
+  }
+        ↓
+  HTTP Status 201 Created sent back to YOU
+```
+
+---
+
+## Part 3 — READ Flow (GET Request)
+
+### Scenario: You want to get item with id=1
+
+```
+YOU → GET http://localhost:8081/api/items/1
+      Authorization: Bearer token
+           ↓
+JwtAuthFilter → token valid? YES → continue
+           ↓
+Controller → getItemById(1) called
+           ↓
+Service → calls itemRepository.findById(1)
+           ↓
+Repository → generates SQL:
+  SELECT * FROM items WHERE id = 1
+           ↓
+Database → finds the row, returns it
+           ↓
+           ┌──────────────────────────────────────┐
+           │ Found?                               │
+           │  YES → convert to DTO → return 200  │
+           │  NO  → throw ItemNotFoundException  │
+           │        → GlobalExceptionHandler     │
+           │        → return 404 Not Found       │
+           └──────────────────────────────────────┘
+           ↓ (found)
+YOU receive:
+{
+  "success": true,
+  "message": "Item retrieved successfully",
+  "data": { "id": 1, "name": "Wireless Mouse", ... }
+}
+```
+
+---
+
+## Part 4 — UPDATE Flow (PUT Request)
+
+### Scenario: Change "Wireless Mouse" category to "Accessories"
+
+```
+YOU → PUT http://localhost:8081/api/items/1
+Body: {
+  "name": "Wireless Mouse",
+  "description": "Ergonomic mouse",
+  "category": "Accessories"   ← changed this
+}
+           ↓
+JwtAuthFilter → token check → valid
+           ↓
+Controller → updateItem(id=1, itemDTO) called
+           ↓
+Service:
+  Step 1: Find existing item
+          itemRepository.findById(1)
+          → SELECT * FROM items WHERE id = 1
+          → Found: {id:1, name:"Wireless Mouse", category:"Electronics"}
+
+  Step 2: Update the fields
+          item.setCategory("Accessories")  ← only category changed
+          item.setName("Wireless Mouse")   ← same
+          item.setDescription("Ergo...")   ← same
+
+  Step 3: Save it back
+          itemRepository.save(item)
+          → UPDATE items SET category='Accessories'
+            WHERE id = 1
+           ↓
+Database updates the row:
+  BEFORE: {id:1, name:"Wireless Mouse", category:"Electronics"}
+  AFTER:  {id:1, name:"Wireless Mouse", category:"Accessories"}
+           ↓
+YOU receive:
+{
+  "success": true,
+  "message": "Item updated successfully",
+  "data": { "id": 1, "name": "Wireless Mouse", "category": "Accessories" }
+}
+```
+
+---
+
+## Part 5 — DELETE Flow (DELETE Request)
+
+### Scenario: Delete item with id=1
+
+```
+YOU → DELETE http://localhost:8081/api/items/1
+           ↓
+JwtAuthFilter → token check → valid
+           ↓
+Controller → deleteItem(1) called
+           ↓
+Service:
+  Step 1: Does item exist?
+          itemRepository.existsById(1)
+          → SELECT COUNT(*) FROM items WHERE id = 1
+          ┌──────────────────────────────────────────┐
+          │ Exists? YES → proceed to delete          │
+          │ Exists? NO  → throw ItemNotFoundException│
+          │               return 404 Not Found       │
+          └──────────────────────────────────────────┘
+
+  Step 2: Delete it
+          itemRepository.deleteById(1)
+          → DELETE FROM items WHERE id = 1
+           ↓
+Database:
+  BEFORE: row with id=1 exists
+  AFTER:  row with id=1 is gone permanently
+           ↓
+YOU receive:
+{
+  "success": true,
+  "message": "Item deleted successfully",
+  "data": null
+}
+HTTP Status: 200 OK
+```
+
+---
+
+## Part 6 — Error Flow (What Happens When Things Go Wrong)
+
+### Scenario 1: Invalid JWT Token
+
+```
+YOU → GET /api/items/1
+      Authorization: Bearer INVALID_TOKEN
+           ↓
+JwtAuthFilter:
+  jwtUtil.validateToken("INVALID_TOKEN") → false
+           ↓
+  Request BLOCKED here itself
+  Controller never even runs
+           ↓
+YOU receive: HTTP 403 Forbidden
+```
+
+### Scenario 2: Validation Fails
+
+```
+YOU → POST /api/items
+Body: {
+  "name": "",           ← empty! not allowed
+  "category": ""        ← empty! not allowed
+}
+           ↓
+JwtAuthFilter → token valid → continue
+           ↓
+Controller:
+  @Valid checks ItemDTO:
+  name is blank → FAIL
+  category is blank → FAIL
+           ↓
+  GlobalExceptionHandler catches this
+           ↓
+YOU receive: HTTP 400 Bad Request
+{
+  "success": false,
+  "message": "Validation failed",
+  "data": {
+    "name": "Name is required",
+    "category": "Category is required"
+  }
+}
+  Controller never even calls Service
+  Service never even runs
+  Database never even touched
+```
+
+### Scenario 3: Item Not Found
+
+```
+YOU → GET /api/items/999
+           ↓
+JwtAuthFilter → valid
+           ↓
+Controller → getItemById(999)
+           ↓
+Service → itemRepository.findById(999)
+           ↓
+Repository → SELECT * FROM items WHERE id = 999
+           ↓
+Database → no row found → returns empty
+           ↓
+Service:
+  .orElseThrow(() -> new ItemNotFoundException(999))
+  throws: ItemNotFoundException("Item not found with id: 999")
+           ↓
+GlobalExceptionHandler catches ItemNotFoundException
+           ↓
+YOU receive: HTTP 404 Not Found
+{
+  "success": false,
+  "message": "Item not found with id: 999",
+  "data": null
+}
+```
+
+---
+
+## Part 7 — How All 4 Services Relate
+
+The 4 services are **independent** but **logically connected** through data. Here's a real business scenario showing how they all work together:
+
+```
+REAL SCENARIO: Admin adds a new product and stocks it
+
+STEP 1 — Create the item in Item Service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST http://localhost:8081/api/items
+{
+  "name": "Wireless Mouse",
+  "category": "Electronics"
+}
+Response: { "id": 1, "name": "Wireless Mouse" }
+
+item_db → items table now has id=1
+
+
+STEP 2 — Add stock in Inventory Service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST http://localhost:8082/api/inventory
+{
+  "itemId": 1,          ← same id from step 1
+  "quantity": 150,
+  "warehouseLocation": "A1-North"
+}
+
+inventory_db → inventory table now tracks item 1
+
+
+STEP 3 — Stock drops low, send notification
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST http://localhost:8083/api/notifications
+{
+  "eventType": "LowStock",
+  "recipient": "manager@company.com",
+  "message": "Stock for item 1 has dropped below threshold"
+}
+
+notification_db → notification logged
+
+
+STEP 4 — Record everything in Audit Service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POST http://localhost:8084/api/audit-logs
+{
+  "serviceName": "Inventory Service",
+  "operation": "UPDATE",
+  "recordId": 1,
+  "details": "Stock updated for item 1"
+}
+
+audit_db → audit log recorded
+```
+
+Visually, the data across all 4 databases looks like this:
+
+```
+item_db                      inventory_db
+items table                  inventory table
+┌────┬──────────────┐        ┌────┬────────┬──────────┬──────────┐
+│ id │ name         │        │ id │ item_id│ quantity │ location │
+├────┼──────────────┤        ├────┼────────┼──────────┼──────────┤
+│  1 │ Wireless     │        │  1 │   1    │   150    │ A1-North │
+│    │ Mouse        │        │    │   ↑    │          │          │
+└────┴──────────────┘        └────┴────────┴──────────┴──────────┘
+         ↑                          same id connects them logically
+         │
+         └──── item_id=1 in inventory refers to id=1 in items
+
+
+notification_db              audit_db
+notifications table          audit_logs table
+┌────┬──────────┬──────────┐ ┌────┬─────────────┬───────────┬──────────┐
+│ id │ eventType│ recipient│ │ id │ serviceName │ operation │ recordId │
+├────┼──────────┼──────────┤ ├────┼─────────────┼───────────┼──────────┤
+│  1 │ LowStock │ mgr@co.. │ │  1 │ Inv Service │ UPDATE    │    1     │
+└────┴──────────┴──────────┘ └────┴─────────────┴───────────┴──────────┘
+```
+
+---
+
+## Part 8 — Complete Data Flow Diagram
+
+```
+                        ┌─────────────────┐
+                        │   YOU / CLIENT  │
+                        │ Swagger/Postman │
+                        └────────┬────────┘
+                                 │ HTTP Request
+                                 │ + JWT Token
+                                 │ + JSON Body
+                                 ▼
+                    ┌────────────────────────┐
+                    │    JwtAuthFilter        │
+                    │  "Check the badge"      │
+                    │                        │
+                    │  Token Valid? ──NO──→ 401 Unauthorized
+                    │      │                 │
+                    │     YES                │
+                    └──────┬─────────────────┘
+                           │
+                           ▼
+                    ┌─────────────────┐
+                    │   Controller    │
+                    │ "Receive order" │
+                    │                │
+                    │ Validate input  │
+                    │ Invalid? ──→ 400 Bad Request
+                    │    │           │
+                    │   OK          │
+                    └────┬──────────┘
+                         │
+                         ▼
+                    ┌─────────────────┐
+                    │    Service      │
+                    │ "Process order" │
+                    │                │
+                    │ Business logic  │
+                    │ DTO → Model    │
+                    └────┬────────── ┘
+                         │
+                         ▼
+                    ┌─────────────────┐
+                    │   Repository    │
+                    │ "Filing clerk"  │
+                    │                │
+                    │ findById()      │
+                    │ save()          │
+                    │ deleteById()    │
+                    └────┬────────── ┘
+                         │ SQL Query
+                         ▼
+                    ┌─────────────────┐
+                    │  MySQL Database │
+                    │ "Filing cabinet"│
+                    │                │
+                    │  items table    │
+                    │  inventory      │
+                    │  notifications  │
+                    │  audit_logs     │
+                    └────┬────────── ┘
+                         │ Data returned
+                         ▼
+              (reverse path back up)
+                         │
+                    Repository returns entity
+                         │
+                    Service converts to DTO
+                         │
+                    Controller wraps in ApiResponse
+                         │
+                         ▼
+                    ┌─────────────────┐
+                    │   YOU / CLIENT  │
+                    │ Clean JSON      │
+                    │ HTTP Status     │
+                    └─────────────────┘
+```
+
+---
+
+## Part 9 — Summary Table
+
+| Action | You Send | SQL Generated | You Get Back |
+|--------|----------|---------------|--------------|
+| Create | POST + JSON body | INSERT INTO | 201 + new record |
+| Read one | GET + id in URL | SELECT WHERE id=? | 200 + record |
+| Read all | GET | SELECT * FROM | 200 + list |
+| Update | PUT + id + JSON | UPDATE SET WHERE id=? | 200 + updated record |
+| Delete | DELETE + id | DELETE WHERE id=? | 200 + success message |
+| Not found | any + wrong id | SELECT returns empty | 404 + error message |
+| Bad input | POST + empty fields | never reaches DB | 400 + validation errors |
+| No token | any + no header | never reaches DB | 403 + unauthorized |
+
+That is the complete data flow of this entire project. Every request, every service, every scenario follows this same pattern.
