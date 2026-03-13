@@ -1,0 +1,571 @@
+# All Possible Interview Questions With Answers
+
+---
+
+## Category 1 — Basic Project Questions
+
+---
+
+**Q1. Tell me about your project.**
+
+> "I built an Item Management System for an e-commerce platform using Spring Boot microservices. It has 4 independent services — Item Service, Inventory Service, Notification Service, and Audit Service. Each service runs on its own port, has its own MySQL database, and handles one specific job. All APIs are secured with JWT authentication and documented with Swagger."
+
+---
+
+**Q2. Why did you choose microservices over a monolithic application?**
+
+> "In a monolithic application everything is in one place. If one part breaks, the whole application goes down. With microservices, each service is independent. If the Notification Service goes down, Item Service and Inventory Service keep running perfectly. Also each service can be scaled independently based on load."
+
+---
+
+**Q3. How many services did you build and what does each do?**
+
+> - Item Service — manages product catalog, CRUD operations on items
+> - Inventory Service — tracks stock levels, warehouse locations, low stock alerts
+> - Notification Service — logs and manages notifications sent for events
+> - Audit Service — records every important operation for tracking and compliance
+
+---
+
+**Q4. Which technologies did you use?**
+
+> - Java 17
+> - Spring Boot 3.2
+> - Spring Data JPA and Hibernate
+> - Spring Security
+> - MySQL database
+> - JWT for authentication
+> - Swagger / SpringDoc OpenAPI for documentation
+> - Lombok to reduce boilerplate code
+> - JUnit and Mockito for testing
+> - Maven for build management
+
+---
+
+**Q5. What is the port number of each service?**
+
+> - Item Service → 8081
+> - Inventory Service → 8082
+> - Notification Service → 8083
+> - Audit Service → 8084
+
+---
+
+**Q6. What databases did you use?**
+
+> MySQL with 4 separate databases:
+> - item_db for Item Service
+> - inventory_db for Inventory Service
+> - notification_db for Notification Service
+> - audit_db for Audit Service
+
+---
+
+## Category 2 — Spring Boot Questions
+
+---
+
+**Q7. What is Spring Boot?**
+
+> "Spring Boot is a Java framework that makes it easy to create standalone, production-ready applications. It provides auto-configuration, embedded server, and many pre-built starters so you don't have to set up everything manually. You just add dependencies and start writing business logic."
+
+---
+
+**Q8. What is the difference between Spring and Spring Boot?**
+
+> "Spring is the core framework but requires a lot of manual configuration — XML files, web server setup, etc. Spring Boot is built on top of Spring and provides auto-configuration, embedded Tomcat server, and starter dependencies. With Spring Boot you can start a web application in minutes without any XML configuration."
+
+---
+
+**Q9. What is @SpringBootApplication?**
+
+> "It is the main annotation on the main class. It combines three annotations:
+> - @Configuration — marks the class as a configuration class
+> - @EnableAutoConfiguration — tells Spring Boot to auto-configure based on dependencies
+> - @ComponentScan — scans all classes in the package for Spring components"
+
+---
+
+**Q10. What is @RestController?**
+
+> "It combines @Controller and @ResponseBody. It marks a class as a REST API controller. Every method in this class automatically returns JSON response instead of a view page."
+
+---
+
+**Q11. What is the difference between @Controller and @RestController?**
+
+> "@Controller is used for web MVC applications that return HTML views. @RestController is used for REST APIs that return JSON or XML data. @RestController = @Controller + @ResponseBody on every method."
+
+---
+
+**Q12. What annotations did you use on your controller methods?**
+
+> - @PostMapping — for POST requests to create data
+> - @GetMapping — for GET requests to read data
+> - @PutMapping — for PUT requests to update data
+> - @DeleteMapping — for DELETE requests to delete data
+> - @PathVariable — to read values from the URL like /items/1
+> - @RequestBody — to read the JSON body of the request
+> - @RequestParam — to read query parameters like ?threshold=10
+
+---
+
+**Q13. What is @PathVariable vs @RequestParam?**
+
+> "@PathVariable reads a value from the URL path itself. For example in /api/items/5, the 5 is a path variable. @RequestParam reads a value from the query string. For example in /api/inventory/low-stock?threshold=10, the threshold=10 is a request param."
+
+---
+
+**Q14. What is application.properties?**
+
+> "It is the configuration file for a Spring Boot application. It contains settings like server port, database URL, username, password, JPA settings, JWT secret, and logging levels. Spring Boot reads this file automatically at startup."
+
+---
+
+**Q15. What is @Value annotation?**
+
+> "It is used to inject values from application.properties into Java fields. For example:
+> @Value('${jwt.secret}') private String secret;
+> This reads the jwt.secret value from application.properties and puts it in the secret variable."
+
+---
+
+## Category 3 — REST API Questions
+
+---
+
+**Q16. What is REST API?**
+
+> "REST stands for Representational State Transfer. It is a standard way of building web services. It uses HTTP methods — GET, POST, PUT, DELETE — to perform operations on resources. Data is exchanged in JSON format. Each URL represents a resource like /api/items represents the items resource."
+
+---
+
+**Q17. What are HTTP methods and when do you use each?**
+
+> - POST — Create new data
+> - GET — Read / fetch data
+> - PUT — Update existing data completely
+> - DELETE — Remove data
+> - PATCH — Update partially (we used PUT which updates fully)
+
+---
+
+**Q18. What HTTP status codes did you use?**
+
+> - 200 OK — successful GET, PUT, DELETE
+> - 201 Created — successful POST (new record created)
+> - 400 Bad Request — validation failed, wrong input
+> - 401 Unauthorized — missing or invalid JWT token
+> - 404 Not Found — record does not exist
+> - 500 Internal Server Error — unexpected server error
+
+---
+
+**Q19. What is the difference between PUT and PATCH?**
+
+> "PUT replaces the entire resource. You send all fields even if only one changed. PATCH updates only the fields you send. In our project we used PUT which means when updating an item you send all fields — name, description, category — and the entire record gets replaced with the new values."
+
+---
+
+**Q20. What is JSON?**
+
+> "JSON stands for JavaScript Object Notation. It is a lightweight data format used to exchange data between client and server. It uses key-value pairs inside curly braces. Our APIs receive JSON as input and return JSON as output."
+
+---
+
+## Category 4 — JPA and Database Questions
+
+---
+
+**Q21. What is JPA?**
+
+> "JPA stands for Java Persistence API. It is a specification that defines how Java objects should be mapped to database tables. Hibernate is the most popular implementation of JPA. With JPA you work with Java objects and it automatically generates SQL queries."
+
+---
+
+**Q22. What is Hibernate?**
+
+> "Hibernate is an ORM — Object Relational Mapping — tool. It maps Java classes to database tables and Java fields to table columns. When you call save() on a repository, Hibernate generates the INSERT SQL. When you call findById(), it generates SELECT SQL. You don't write SQL manually."
+
+---
+
+**Q23. What is ORM?**
+
+> "ORM stands for Object Relational Mapping. It is a technique to convert data between Java objects and database tables automatically. Instead of writing SQL, you work with Java objects. The ORM tool handles the conversion."
+
+---
+
+**Q24. What is @Entity?**
+
+> "It marks a Java class as a database entity — meaning this class represents a database table. Every field in the class becomes a column in the table."
+
+---
+
+**Q25. What is @Table?**
+
+> "It specifies the name of the database table that the entity maps to. For example @Table(name = 'items') means this class maps to the items table in MySQL."
+
+---
+
+**Q26. What is @Id and @GeneratedValue?**
+
+> "@Id marks a field as the primary key of the table. @GeneratedValue with strategy IDENTITY means the database automatically generates the ID value — like AUTO_INCREMENT in MySQL. So you don't provide the ID when creating a record, MySQL assigns it automatically starting from 1."
+
+---
+
+**Q27. What is @Column?**
+
+> "It is used to customize how a field maps to a database column. You can set the column name, whether it can be null, maximum length, etc. For example @Column(nullable = false, length = 150) means this column cannot be empty and max 150 characters."
+
+---
+
+**Q28. What is Spring Data JPA?**
+
+> "Spring Data JPA is a layer on top of JPA that makes database operations even easier. You just create an interface that extends JpaRepository and you automatically get methods like save, findById, findAll, deleteById without writing any implementation code."
+
+---
+
+**Q29. What is JpaRepository?**
+
+> "It is an interface provided by Spring Data JPA. When your repository extends JpaRepository, you get many ready-made methods for free — save, findById, findAll, deleteById, count, existsById and more. You don't need to implement any of them."
+
+---
+
+**Q30. How does Spring generate SQL from method names?**
+
+> "Spring Data JPA reads the method name and generates SQL automatically. For example:
+> - findByCategory → SELECT * FROM items WHERE category = ?
+> - findByNameContainingIgnoreCase → SELECT * FROM items WHERE LOWER(name) LIKE LOWER('%?%')
+> - existsByNameAndCategory → SELECT COUNT(*) FROM items WHERE name=? AND category=?
+> This feature is called Query Derivation."
+
+---
+
+**Q31. What is @Transactional?**
+
+> "It ensures that a set of database operations either all succeed or all fail together. This is called atomicity. If any operation inside the transaction fails, all previous operations in that transaction are rolled back so the database stays in a consistent state. In our service methods, @Transactional ensures data integrity."
+
+---
+
+**Q32. What is ddl-auto=update in application.properties?**
+
+> "It tells Hibernate what to do with the database schema at startup. Update means Hibernate will look at the entity classes and automatically create tables if they don't exist, or add new columns if you added new fields. It never drops existing data."
+
+---
+
+## Category 5 — Architecture Questions
+
+---
+
+**Q33. What is layered architecture?**
+
+> "It is a way of organizing code where each layer has a specific responsibility. Our project has 5 layers:
+> - Controller — receives requests
+> - Service — business logic
+> - Repository — database operations
+> - Model — database table representation
+> - DTO — data transfer between client and server
+> Each layer only talks to the layer directly below it."
+
+---
+
+**Q34. What is the difference between Model and DTO?**
+
+> "Model represents the database table and is used internally for database operations. DTO is used to transfer data between client and server through the API. They are kept separate so you can control what data gets exposed, add validation rules, and change the database structure without breaking the API."
+
+---
+
+**Q35. What is the Service layer and why is it needed?**
+
+> "The Service layer contains the business logic. It sits between the Controller and Repository. Keeping business logic in the service layer means the controller stays thin — it just receives and returns data. The service decides how to process the data, what rules to apply, and what operations to perform. This makes the code cleaner and easier to test."
+
+---
+
+**Q36. What is the Repository layer?**
+
+> "The Repository layer is responsible for all database operations. It is the only layer that directly talks to the database. By keeping database operations in one place, if you change the database later — for example from MySQL to PostgreSQL — you only change the repository layer, nothing else."
+
+---
+
+**Q37. Why do you have separate databases for each service?**
+
+> "This is a key principle of microservice architecture called database per service. With separate databases each service is truly independent. One service cannot break another service's database. Each service can also choose the best database type for its needs. And if one database goes down only that one service is affected."
+
+---
+
+## Category 6 — Security Questions
+
+---
+
+**Q38. What is JWT?**
+
+> "JWT stands for JSON Web Token. It is a compact, self-contained token used for authentication. It has three parts separated by dots — Header, Payload, and Signature. The header contains the algorithm used. The payload contains user information. The signature is used to verify the token hasn't been tampered with."
+
+---
+
+**Q39. How does JWT work in your project?**
+
+> "When a request comes in, the JwtAuthFilter intercepts it before it reaches the controller. It reads the Authorization header and extracts the Bearer token. It then validates the token using the secret key with JwtUtil. If valid, the request proceeds. If invalid or missing, a 401 Unauthorized response is returned immediately."
+
+---
+
+**Q40. What is the difference between Authentication and Authorization?**
+
+> "Authentication is proving who you are — like showing your ID. Authorization is proving what you are allowed to do — like showing your access level badge. In our project, JWT handles authentication — proving the caller has a valid token. Authorization would be checking if that user has permission to perform a specific action."
+
+---
+
+**Q41. What is Spring Security?**
+
+> "Spring Security is a framework that handles authentication and authorization in Spring applications. In our project we use it to intercept all incoming requests, integrate our JWT filter, and define which URLs are public and which require authentication."
+
+---
+
+**Q42. What is SecurityFilterChain?**
+
+> "It is a Spring Security configuration that defines security rules. In our project we configured it to disable CSRF (not needed for REST APIs), use stateless sessions (no server-side session storage), allow Swagger URLs without authentication, and require JWT token for all other URLs."
+
+---
+
+**Q43. What is CSRF and why did you disable it?**
+
+> "CSRF stands for Cross-Site Request Forgery. It is a security attack relevant to browser-based form submissions with session cookies. Since our project is a REST API using JWT tokens (not cookies), CSRF protection is not needed. That is why we disabled it."
+
+---
+
+**Q44. What is Stateless session?**
+
+> "Stateless means the server does not store any session information about the client. Every request must carry all necessary information — in our case the JWT token. The server validates the token on every request independently. This is better for scalability because any server instance can handle any request."
+
+---
+
+## Category 7 — Validation and Error Handling Questions
+
+---
+
+**Q45. How did you implement validation?**
+
+> "I used Spring's @Valid annotation with Bean Validation annotations in the DTO classes. Annotations like @NotBlank ensure a field is not empty, @Size sets length limits, @Email validates email format, @Min ensures a number is above a minimum value. When a request comes in, Spring automatically validates the DTO and returns a 400 error if any rule fails."
+
+---
+
+**Q46. What validation annotations did you use?**
+
+> - @NotBlank — field must not be null or empty
+> - @NotNull — field must not be null
+> - @Size(max=150) — string length must not exceed 150
+> - @Email — must be a valid email format
+> - @Min(value=0) — number must be 0 or more
+
+---
+
+**Q47. What is GlobalExceptionHandler?**
+
+> "It is a class annotated with @RestControllerAdvice that handles all exceptions across the entire application. Instead of each controller handling its own errors, the GlobalExceptionHandler catches all exceptions in one place and returns consistent, clean JSON error responses. No stack traces are exposed to clients."
+
+---
+
+**Q48. What is @RestControllerAdvice?**
+
+> "It is an annotation that marks a class as a global exception handler for all REST controllers. Any exception thrown anywhere in the application gets caught here and converted to a proper HTTP response with appropriate status code and message."
+
+---
+
+**Q49. What is @ExceptionHandler?**
+
+> "It marks a method inside GlobalExceptionHandler as the handler for a specific exception type. For example @ExceptionHandler(ItemNotFoundException.class) means that method will run whenever an ItemNotFoundException is thrown anywhere in the application."
+
+---
+
+## Category 8 — Lombok Questions
+
+---
+
+**Q50. What is Lombok and why did you use it?**
+
+> "Lombok is a Java library that reduces boilerplate code. Instead of writing getters, setters, constructors, toString, equals, hashCode manually, you just add annotations. @Data generates getters and setters, @NoArgsConstructor generates a no-argument constructor, @AllArgsConstructor generates a constructor with all fields, @Builder gives a builder pattern for creating objects."
+
+---
+
+**Q51. What Lombok annotations did you use?**
+
+> - @Data — generates getters, setters, toString, equals, hashCode
+> - @NoArgsConstructor — generates empty constructor
+> - @AllArgsConstructor — generates constructor with all fields
+> - @Builder — generates builder pattern
+> - @RequiredArgsConstructor — generates constructor for final fields
+> - @Slf4j — generates a logger variable automatically
+
+---
+
+## Category 9 — Testing Questions
+
+---
+
+**Q52. What types of testing did you do?**
+
+> "I wrote unit tests for the service layer using JUnit 5 and Mockito. Unit tests test individual components in isolation without a real database or running server."
+
+---
+
+**Q53. What is Mockito?**
+
+> "Mockito is a Java mocking framework. In unit tests you don't want to use a real database because tests should be fast and independent. Mockito lets you create fake versions of dependencies. For example instead of a real ItemRepository hitting MySQL, you create a mock that returns predefined data."
+
+---
+
+**Q54. What is the difference between Unit Test and Integration Test?**
+
+> "Unit tests test a single class or method in isolation. Dependencies are mocked. They run very fast. Integration tests test multiple components working together — like controller calling service calling real database. They are slower but test the full flow. In our project we have unit tests for the service layer."
+
+---
+
+**Q55. What is @ExtendWith(MockitoExtension.class)?**
+
+> "It tells JUnit to use Mockito as the test extension. This enables Mockito annotations like @Mock and @InjectMocks to work automatically without manually calling MockitoAnnotations.openMocks()."
+
+---
+
+**Q56. What is @Mock and @InjectMocks?**
+
+> "@Mock creates a fake version of a class. @InjectMocks creates the real class being tested and automatically injects all @Mock objects into it. For example @Mock ItemRepository creates a fake repository. @InjectMocks ItemServiceImpl creates the real service and injects the fake repository into it."
+
+---
+
+**Q57. What is the difference between when().thenReturn() and verify()?**
+
+> "when().thenReturn() sets up what a mock should return when a specific method is called — this is called stubbing. verify() checks that a specific method was actually called during the test. For example verify(itemRepository, times(1)).save(any()) checks that save was called exactly once."
+
+---
+
+## Category 10 — Swagger Questions
+
+---
+
+**Q58. What is Swagger?**
+
+> "Swagger is an API documentation tool. SpringDoc OpenAPI reads the controller annotations and automatically generates interactive API documentation. Developers can open the Swagger UI in browser, see all endpoints, understand what JSON to send, and test APIs directly without needing Postman."
+
+---
+
+**Q59. What annotations did you use for Swagger?**
+
+> - @Tag — gives a name and description to a controller group
+> - @Operation — describes what a specific endpoint does
+> - These appear as labels in the Swagger UI
+
+---
+
+## Category 11 — Maven Questions
+
+---
+
+**Q60. What is Maven?**
+
+> "Maven is a build tool for Java projects. It manages dependencies — you list what libraries you need in pom.xml and Maven downloads them automatically. It also compiles the code, runs tests, and packages the application into a JAR file."
+
+---
+
+**Q61. What is pom.xml?**
+
+> "POM stands for Project Object Model. It is the configuration file for Maven. It contains the project details, Java version, and all dependencies the project needs. When you run the project, Maven reads pom.xml and downloads all required libraries."
+
+---
+
+**Q62. What is a dependency in Maven?**
+
+> "A dependency is an external library your project needs. Instead of downloading JAR files manually, you declare them in pom.xml with groupId, artifactId, and version. Maven automatically downloads them from the internet and makes them available in your project."
+
+---
+
+## Category 12 — Tricky Questions
+
+---
+
+**Q63. What happens if two services try to modify the same item at the same time?**
+
+> "In our current implementation each service has its own database so they don't directly conflict. Within one service, @Transactional ensures database consistency. In a production system you would implement optimistic locking using @Version annotation which adds a version column to the table and prevents conflicting updates."
+
+---
+
+**Q64. How would services communicate with each other in production?**
+
+> "There are two ways. Synchronous communication using REST template or Feign Client — one service directly calls another service's API and waits for the response. Asynchronous communication using message queues like RabbitMQ or Kafka — one service publishes an event and other services consume it independently. Async is preferred for better resilience."
+
+---
+
+**Q65. What would you improve in this project?**
+
+> "I would add:
+> - API Gateway to have a single entry point for all services
+> - Service Discovery using Eureka so services can find each other automatically
+> - Centralized configuration using Spring Cloud Config
+> - Message queue like Kafka for async communication between services
+> - Docker containers for easy deployment
+> - Circuit breaker pattern using Resilience4j to handle service failures gracefully"
+
+---
+
+**Q66. What is an API Gateway?**
+
+> "An API Gateway is a single entry point for all client requests. Instead of clients knowing about 4 different ports (8081, 8082, 8083, 8084), they only talk to the gateway. The gateway routes requests to the correct service. It can also handle authentication, rate limiting, and load balancing centrally."
+
+---
+
+**Q67. What is the difference between @Component, @Service, @Repository?**
+
+> "All three are specializations of @Component — they all register the class as a Spring bean. The difference is semantic meaning:
+> - @Component — generic Spring component
+> - @Service — marks a class as service layer, business logic
+> - @Repository — marks a class as data access layer, also adds exception translation for database errors"
+
+---
+
+**Q68. What is dependency injection?**
+
+> "Dependency Injection means Spring creates and manages objects for you and injects them where needed. Instead of creating objects manually with new keyword, you declare what you need and Spring provides it. In our project @RequiredArgsConstructor with final fields tells Spring to inject the required dependencies through the constructor automatically."
+
+---
+
+**Q69. What is the difference between @Autowired and @RequiredArgsConstructor?**
+
+> "@Autowired directly injects dependencies into fields. @RequiredArgsConstructor is a Lombok annotation that generates a constructor for all final fields and Spring uses constructor injection. Constructor injection is preferred because it makes dependencies explicit, easier to test, and the object is always in a valid state."
+
+---
+
+**Q70. What would happen if you start two instances of Item Service?**
+
+> "Both instances would connect to the same item_db database. Requests could be handled by either instance which is good for load balancing. However you would need a load balancer in front to distribute traffic, and a service registry like Eureka so other services know about both instances."
+
+---
+
+## Quick Summary — Most Important Questions to Prepare
+
+```
+DEFINITELY WILL BE ASKED:
+✅ Tell me about your project
+✅ What is microservice
+✅ What is REST API
+✅ What is JWT
+✅ What is JPA / Hibernate
+✅ What is Spring Boot
+✅ What HTTP status codes did you use
+✅ What is @Transactional
+✅ What is DTO vs Model
+✅ How did you handle exceptions
+
+LIKELY TO BE ASKED:
+✅ What is Spring Security
+✅ What is Swagger
+✅ What is Lombok
+✅ What is Maven / pom.xml
+✅ What is @RestController
+✅ How does validation work
+✅ What testing did you do
+
+ADVANCED QUESTIONS:
+✅ How would services communicate
+✅ What would you improve
+✅ What is API Gateway
+✅ What is dependency injection
+```
