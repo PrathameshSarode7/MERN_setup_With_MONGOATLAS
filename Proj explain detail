@@ -1,0 +1,542 @@
+# Project Explanation — Full Detail Easy Language
+
+---
+
+## What is This Project?
+
+This project is a **backend system for an e-commerce company**. Think of it like the engine behind a shopping website like Amazon or Flipkart. The website you see is the frontend. We built the **backend** — the part that stores data, processes requests, and manages everything behind the scenes.
+
+Our system manages 4 things:
+- **Items** — what products the company sells
+- **Inventory** — how many units are in the warehouse
+- **Notifications** — alerts sent when something happens
+- **Audit Logs** — record of every action done in the system
+
+---
+
+## How is it Built — Microservices
+
+Instead of one big application, we built **4 small independent applications**. Each one handles only one job.
+
+```
+┌─────────────────┐   ┌─────────────────┐   ┌──────────────────┐   ┌─────────────────┐
+│  Item Service   │   │Inventory Service│   │Notification Svc  │   │  Audit Service  │
+│   Port 8081     │   │   Port 8082     │   │   Port 8083      │   │   Port 8084     │
+│   DB: item_db   │   │ DB:inventory_db │   │ DB:notification  │   │  DB: audit_db   │
+└─────────────────┘   └─────────────────┘   └──────────────────┘   └─────────────────┘
+```
+
+Each service:
+- Runs on its own port
+- Has its own database
+- Works independently
+- Can be started and stopped separately
+
+---
+
+## Service 1 — Item Service (Port 8081)
+
+### What it does
+This service manages the **product catalog**. Every product in the system is called an Item. You can create new items, view existing ones, update them, or delete them.
+
+### Database Table
+
+```
+items table in MySQL (item_db)
+┌────┬──────────────────┬───────────────────┬─────────────┬─────────────────────┐
+│ id │ name             │ description       │ category    │ created_at          │
+├────┼──────────────────┼───────────────────┼─────────────┼─────────────────────┤
+│  1 │ Wireless Mouse   │ Ergonomic mouse   │ Electronics │ 2025-07-28 09:00:00 │
+│  2 │ USB Keyboard     │ Mechanical KB     │ Electronics │ 2025-07-28 10:00:00 │
+│  3 │ Office Chair     │ Comfortable chair │ Furniture   │ 2025-07-28 11:00:00 │
+└────┴──────────────────┴───────────────────┴─────────────┴─────────────────────┘
+```
+
+### APIs Available
+
+```
+POST   /api/items              → Create a new item
+GET    /api/items              → Get all items
+GET    /api/items/1            → Get item with id 1
+GET    /api/items/category/Electronics → Get all Electronics items
+PUT    /api/items/1            → Update item with id 1
+DELETE /api/items/1            → Delete item with id 1
+```
+
+### What you send to create an item (JSON)
+
+```json
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic wireless mouse with USB receiver",
+  "category": "Electronics"
+}
+```
+
+### What you get back
+
+```json
+{
+  "success": true,
+  "message": "Item created successfully",
+  "data": {
+    "id": 1,
+    "name": "Wireless Mouse",
+    "description": "Ergonomic wireless mouse with USB receiver",
+    "category": "Electronics",
+    "createdAt": "2025-07-28T09:00:00"
+  }
+}
+```
+
+### Files Inside Item Service
+
+```
+ItemServiceApplication.java  → Main file, starts the application
+
+model/
+  Item.java                  → Represents the items table in database
+
+dto/
+  ItemDTO.java               → What data comes in and goes out
+  ApiResponse.java           → Standard wrapper for all responses
+
+repository/
+  ItemRepository.java        → Talks to the database
+
+service/
+  ItemService.java           → Defines what operations exist
+  ItemServiceImpl.java       → Actually does the operations
+
+controller/
+  ItemController.java        → Receives API requests
+
+exception/
+  ItemNotFoundException.java      → Custom error when item not found
+  GlobalExceptionHandler.java     → Handles all errors cleanly
+
+config/
+  JwtUtil.java               → JWT token helper
+  JwtAuthFilter.java         → Checks token on every request
+  SecurityConfig.java        → Security rules
+  OpenApiConfig.java         → Swagger setup
+```
+
+---
+
+## Service 2 — Inventory Service (Port 8082)
+
+### What it does
+This service tracks **how many units of each item are available** in the warehouse. When you add stock, update quantity, or check how many items are left, this service handles it. It also has a special feature to find items that are running low on stock.
+
+### Database Table
+
+```
+inventory table in MySQL (inventory_db)
+┌────┬─────────┬──────────┬────────────────────┬─────────────────────┐
+│ id │ item_id │ quantity │ warehouse_location  │ last_updated        │
+├────┼─────────┼──────────┼────────────────────┼─────────────────────┤
+│  1 │    1    │   150    │ A1-North            │ 2025-07-28 10:30:00 │
+│  2 │    2    │    45    │ B2-South            │ 2025-07-28 11:00:00 │
+│  3 │    3    │     8    │ C1-East             │ 2025-07-28 11:30:00 │
+└────┴─────────┴──────────┴────────────────────┴─────────────────────┘
+```
+
+Notice item_id connects to the items table. Item with id=1 (Wireless Mouse) has 150 units in warehouse A1-North.
+
+### APIs Available
+
+```
+POST   /api/inventory                    → Add inventory for an item
+GET    /api/inventory                    → Get all inventory records
+GET    /api/inventory/1                  → Get inventory record by id
+GET    /api/inventory/item/1             → Get inventory for item id 1
+GET    /api/inventory/low-stock?threshold=10 → Items with less than 10 units
+PUT    /api/inventory/1                  → Update inventory record
+DELETE /api/inventory/1                  → Delete inventory record
+```
+
+### What you send to add inventory (JSON)
+
+```json
+{
+  "itemId": 1,
+  "quantity": 150,
+  "warehouseLocation": "A1-North"
+}
+```
+
+### What you get back
+
+```json
+{
+  "success": true,
+  "message": "Inventory added successfully",
+  "data": {
+    "id": 1,
+    "itemId": 1,
+    "quantity": 150,
+    "warehouseLocation": "A1-North",
+    "lastUpdated": "2025-07-28T10:30:00"
+  }
+}
+```
+
+### Special Feature — Low Stock
+
+```
+GET /api/inventory/low-stock?threshold=10
+```
+
+This returns all items that have quantity less than 10 units. Very useful for the warehouse manager to know when to reorder stock.
+
+```json
+{
+  "success": true,
+  "message": "Low stock items retrieved",
+  "data": [
+    {
+      "id": 3,
+      "itemId": 3,
+      "quantity": 8,
+      "warehouseLocation": "C1-East"
+    }
+  ]
+}
+```
+
+---
+
+## Service 3 — Notification Service (Port 8083)
+
+### What it does
+This service **logs and manages notifications**. Whenever something important happens in the system — like stock going low, an item being deleted, or an order being placed — a notification is recorded. It stores who was notified, what happened, and when.
+
+### Database Table
+
+```
+notifications table in MySQL (notification_db)
+┌────┬───────────┬──────────────────────────┬──────────────────────────────────┬─────────────────────┐
+│ id │ event_type│ recipient                │ message                          │ sent_at             │
+├────┼───────────┼──────────────────────────┼──────────────────────────────────┼─────────────────────┤
+│  1 │ LowStock  │ manager@company.com      │ Stock for item 1005 dropped low  │ 2025-07-28 11:00:00 │
+│  2 │ ItemAdded │ admin@company.com        │ New item Wireless Mouse added    │ 2025-07-28 09:00:00 │
+└────┴───────────┴──────────────────────────┴──────────────────────────────────┴─────────────────────┘
+```
+
+### APIs Available
+
+```
+POST   /api/notifications              → Send/log a new notification
+GET    /api/notifications              → Get all notification logs
+GET    /api/notifications/1            → Get notification by id
+GET    /api/notifications/event/LowStock → Get all LowStock notifications
+PUT    /api/notifications/1            → Update notification
+DELETE /api/notifications/1            → Delete notification entry
+```
+
+### What you send to create a notification (JSON)
+
+```json
+{
+  "eventType": "LowStock",
+  "recipient": "inventory.manager@company.com",
+  "message": "Stock for item 1005 has dropped below threshold."
+}
+```
+
+### What you get back
+
+```json
+{
+  "success": true,
+  "message": "Notification sent successfully",
+  "data": {
+    "id": 1,
+    "eventType": "LowStock",
+    "recipient": "inventory.manager@company.com",
+    "message": "Stock for item 1005 has dropped below threshold.",
+    "sentAt": "2025-07-28T11:00:00"
+  }
+}
+```
+
+---
+
+## Service 4 — Audit Service (Port 8084)
+
+### What it does
+This service is like a **diary of the entire system**. Every important action that happens — creating an item, deleting inventory, sending a notification — gets recorded here. This is important for security, compliance, and debugging. If something goes wrong, you can look at the audit log and see exactly what happened and when.
+
+### Database Table
+
+```
+audit_logs table in MySQL (audit_db)
+┌────┬──────────────────┬───────────┬───────────┬─────────────────────┬──────────────────────────┐
+│ id │ service_name     │ operation │ record_id │ timestamp           │ details                  │
+├────┼──────────────────┼───────────┼───────────┼─────────────────────┼──────────────────────────┤
+│  1 │ Item Service     │ CREATE    │   1       │ 2025-07-28 09:00:00 │ Item created by admin    │
+│  2 │ Inventory Service│ UPDATE    │   1       │ 2025-07-28 10:30:00 │ Quantity updated to 150  │
+│  3 │ Item Service     │ DELETE    │   5       │ 2025-07-28 12:00:00 │ Item deleted by admin    │
+└────┴──────────────────┴───────────┴───────────┴─────────────────────┴──────────────────────────┘
+```
+
+### APIs Available
+
+```
+POST   /api/audit-logs                      → Log a new event
+GET    /api/audit-logs                      → Get all audit logs
+GET    /api/audit-logs/1                    → Get log by id
+GET    /api/audit-logs/service/Item Service → Logs by service name
+GET    /api/audit-logs/operation/DELETE     → All DELETE operations
+GET    /api/audit-logs/record/1             → All logs for record id 1
+PUT    /api/audit-logs/1                    → Update a log
+DELETE /api/audit-logs/1                    → Delete a log
+```
+
+### What you send to log an event (JSON)
+
+```json
+{
+  "serviceName": "Item Service",
+  "operation": "DELETE",
+  "recordId": 1005,
+  "details": "Item deleted by admin user"
+}
+```
+
+### What you get back
+
+```json
+{
+  "success": true,
+  "message": "Audit log created successfully",
+  "data": {
+    "id": 1,
+    "serviceName": "Item Service",
+    "operation": "DELETE",
+    "recordId": 1005,
+    "timestamp": "2025-07-28T12:00:00",
+    "details": "Item deleted by admin user"
+  }
+}
+```
+
+---
+
+## What is Inside Every Service — The Layers
+
+Every service is built in exactly the same pattern. 5 layers, each with a specific job.
+
+```
+REQUEST COMES IN
+      ↓
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 1 — Security (JwtAuthFilter)                     │
+│  Job: Check if the request has a valid JWT token        │
+│  If no token or wrong token → reject immediately        │
+└─────────────────────────────────────────────────────────┘
+      ↓
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 2 — Controller                                   │
+│  Job: Receive the request, validate the input data      │
+│  Calls the service to do the actual work                │
+└─────────────────────────────────────────────────────────┘
+      ↓
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 3 — Service                                      │
+│  Job: Business logic — decide what needs to happen      │
+│  Converts DTO to Model and Model back to DTO            │
+└─────────────────────────────────────────────────────────┘
+      ↓
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 4 — Repository                                   │
+│  Job: Talk to the database                              │
+│  save(), findById(), deleteById() etc                   │
+└─────────────────────────────────────────────────────────┘
+      ↓
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 5 — Database (MySQL)                             │
+│  Job: Actually store and retrieve the data              │
+│  Real tables, real rows, real SQL                       │
+└─────────────────────────────────────────────────────────┘
+      ↓
+RESPONSE GOES BACK SAME WAY
+```
+
+---
+
+## What is Model
+
+Model is a Java class that **represents a database table**. Every field in the class becomes a column in the table. When the app starts, Hibernate reads the model and automatically creates the table in MySQL. You don't write CREATE TABLE SQL yourself.
+
+```java
+Item.java                          items table in MySQL
+─────────────────────              ─────────────────────────
+Long id              →             id BIGINT AUTO_INCREMENT
+String name          →             name VARCHAR(150)
+String description   →             description TEXT
+String category      →             category VARCHAR(100)
+LocalDateTime createdAt →          created_at TIMESTAMP
+```
+
+---
+
+## What is DTO
+
+DTO means Data Transfer Object. It is what **travels between the client and the server**. It is separate from the Model because:
+
+- You might not want to expose all database fields
+- You want to add validation rules on the input
+- You want to control exactly what data goes in and comes out
+
+```
+Client sends JSON → Spring converts to DTO → Service converts DTO to Model → Saves to DB
+DB returns Model  → Service converts to DTO → Controller sends DTO as JSON → Client receives
+```
+
+Validation rules live in DTO:
+```
+name cannot be blank
+name cannot exceed 150 characters
+category cannot be blank
+email must be valid format
+quantity cannot be negative
+```
+
+If any rule fails, the request is rejected with a 400 error before even reaching the service or database.
+
+---
+
+## What is Repository
+
+Repository is the **bridge between your Java code and MySQL database**. You just define method names and Spring automatically writes the SQL for you.
+
+```java
+findById(1)
+→ SELECT * FROM items WHERE id = 1
+
+findAll()
+→ SELECT * FROM items
+
+findByCategory("Electronics")
+→ SELECT * FROM items WHERE category = 'Electronics'
+
+save(item)
+→ INSERT INTO items (...) VALUES (...)
+   or
+   UPDATE items SET ... WHERE id = ?
+
+deleteById(1)
+→ DELETE FROM items WHERE id = 1
+
+existsById(1)
+→ SELECT COUNT(*) FROM items WHERE id = 1
+```
+
+---
+
+## What is ApiResponse
+
+Every single API response in this project looks the same — whether success or failure. This consistency is called a **standard response format**.
+
+```java
+Success looks like:
+{
+  "success": true,
+  "message": "Item created successfully",
+  "data": { actual item data here }
+}
+
+Failure looks like:
+{
+  "success": false,
+  "message": "Item not found with id: 99",
+  "data": null
+}
+```
+
+This makes it easy for any frontend application to always know what to expect from our APIs.
+
+---
+
+## What is GlobalExceptionHandler
+
+Without this, if something goes wrong Java would return a horrible 50-line error message. With GlobalExceptionHandler, every error gets caught and converted to a clean JSON response.
+
+```
+Item not found  →  404 with clean message
+Validation fail →  400 with field-by-field errors
+Any other error →  500 with safe generic message
+                   (no sensitive details exposed)
+```
+
+---
+
+## What is JWT Security
+
+JWT is a **token-based security system**. Every API request must carry a token to prove the caller is authorized.
+
+```
+Without token:
+YOU → request → JwtAuthFilter → BLOCKED → 401 Unauthorized
+
+With valid token:
+YOU → request + token → JwtAuthFilter → validates → ALLOWED → Controller runs
+
+With expired/wrong token:
+YOU → request + bad token → JwtAuthFilter → BLOCKED → 401 Unauthorized
+```
+
+The token is generated using a **secret key** that only our server knows. Nobody can fake a token without knowing the secret key.
+
+---
+
+## What is Swagger
+
+Swagger is an **automatic API documentation and testing tool**. It reads your controller code and builds a visual webpage where you can see all APIs and test them directly in the browser.
+
+```
+http://localhost:8081/swagger-ui.html  → Item Service APIs
+http://localhost:8082/swagger-ui.html  → Inventory Service APIs
+http://localhost:8083/swagger-ui.html  → Notification Service APIs
+http://localhost:8084/swagger-ui.html  → Audit Service APIs
+```
+
+On each page you can:
+- See all available endpoints
+- See what JSON format is expected
+- Click Try it out and test the API
+- See the actual response
+
+---
+
+## The Complete Picture — All 4 Services Together
+
+```
+                    ┌─────────────────────────────────────┐
+                    │         E-COMMERCE BACKEND          │
+                    └─────────────────────────────────────┘
+                                     │
+          ┌──────────────────────────┼──────────────────────────┐
+          │                          │                          │
+          ▼                          ▼                          ▼                          
+  ┌───────────────┐        ┌──────────────────┐       ┌──────────────────┐      ┌──────────────┐
+  │ Item Service  │        │Inventory Service │       │  Notification    │      │Audit Service │
+  │   :8081       │        │    :8082         │       │  Service :8083   │      │   :8084      │
+  │               │        │                  │       │                  │      │              │
+  │ Create items  │        │ Track stock      │       │ Send alerts      │      │ Log actions  │
+  │ Update items  │        │ Update quantity  │       │ View logs        │      │ Track who    │
+  │ Delete items  │        │ Low stock check  │       │ Manage settings  │      │ did what     │
+  │ Find by cat   │        │ By warehouse     │       │                  │      │ and when     │
+  └───────┬───────┘        └────────┬─────────┘       └────────┬─────────┘      └──────┬───────┘
+          │                         │                          │                        │
+          ▼                         ▼                          ▼                        ▼
+      item_db                 inventory_db              notification_db             audit_db
+   ┌──────────┐             ┌──────────────┐           ┌──────────────┐          ┌──────────────┐
+   │  items   │             │  inventory   │           │notifications │          │  audit_logs  │
+   │  table   │             │   table      │           │    table     │          │    table     │
+   └──────────┘             └──────────────┘           └──────────────┘          └──────────────┘
+```
+
+Each service is completely independent. Each has its own code, its own database, its own port. Together they form the complete Item Management System for the e-commerce platform.
